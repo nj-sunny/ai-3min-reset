@@ -1,14 +1,16 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import MoodPicker from "@/components/MoodPicker";
 import BreathingOrb from "@/components/BreathingOrb";
 import SessionTimer from "@/components/SessionTimer";
 import GuideText from "@/components/GuideText";
 import SoundToggle from "@/components/SoundToggle";
+import SessionControls from "@/components/SessionControls";
 import { MoodId, getMood } from "@/lib/moods";
 import { addSession, getStreak, getTotalCount } from "@/lib/sessionStore";
+import { suspendAmbientSound, resumeAmbientSound } from "@/lib/ambientSound";
 
 const SESSION_SECONDS = 180;
 
@@ -19,15 +21,27 @@ export default function Home() {
   const [moodId, setMoodId] = useState<MoodId | null>(null);
   const [paragraphs, setParagraphs] = useState<string[]>([]);
   const [elapsed, setElapsed] = useState(0);
+  const [paused, setPaused] = useState(false);
   const [streak, setStreak] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // ticks elapsed forward while the session is active and not paused
   useEffect(() => {
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, []);
+    if (stage !== "session" || paused || !moodId) return;
+    const id = setInterval(() => {
+      setElapsed((prev) => {
+        const next = Math.min(SESSION_SECONDS, prev + 0.1);
+        if (next >= SESSION_SECONDS && prev < SESSION_SECONDS) {
+          addSession(moodId);
+          setStreak(getStreak());
+          setTotalCount(getTotalCount());
+          setStage("complete");
+        }
+        return next;
+      });
+    }, 100);
+    return () => clearInterval(id);
+  }, [stage, paused, moodId]);
 
   async function handleStart() {
     if (!moodId) return;
@@ -43,30 +57,34 @@ export default function Home() {
     } catch {
       setParagraphs(getMood(moodId).fallback);
     }
+    setPaused(false);
     setElapsed(0);
     setStage("session");
-
-    const start = Date.now();
-    intervalRef.current = setInterval(() => {
-      const next = (Date.now() - start) / 1000;
-      if (next >= SESSION_SECONDS) {
-        setElapsed(SESSION_SECONDS);
-        if (intervalRef.current) clearInterval(intervalRef.current);
-        addSession(moodId);
-        setStreak(getStreak());
-        setTotalCount(getTotalCount());
-        setStage("complete");
-      } else {
-        setElapsed(next);
-      }
-    }, 100);
   }
 
-  function handleRestart() {
+  function handleRestartSession() {
+    setElapsed(0);
+    setPaused(false);
+  }
+
+  function handleTogglePause() {
+    setPaused((prev) => {
+      const next = !prev;
+      if (next) {
+        suspendAmbientSound();
+      } else {
+        resumeAmbientSound();
+      }
+      return next;
+    });
+  }
+
+  function handleReturnToStart() {
     setStage("start");
     setMoodId(null);
     setParagraphs([]);
     setElapsed(0);
+    setPaused(false);
   }
 
   return (
@@ -111,9 +129,15 @@ export default function Home() {
       {stage === "session" && (
         <div className="flex w-full max-w-md flex-col items-center gap-8">
           <SoundToggle />
-          <BreathingOrb active={elapsed < SESSION_SECONDS} />
+          <BreathingOrb active={!paused && elapsed < SESSION_SECONDS} />
           <GuideText paragraphs={paragraphs} elapsedSeconds={elapsed} totalSeconds={SESSION_SECONDS} />
           <SessionTimer remainingSeconds={SESSION_SECONDS - elapsed} totalSeconds={SESSION_SECONDS} />
+          <SessionControls
+            paused={paused}
+            onTogglePause={handleTogglePause}
+            onRestart={handleRestartSession}
+            onGoHome={handleReturnToStart}
+          />
         </div>
       )}
 
@@ -137,7 +161,7 @@ export default function Home() {
           </div>
           <button
             type="button"
-            onClick={handleRestart}
+            onClick={handleReturnToStart}
             className="w-full max-w-xs rounded-full bg-blossom-500 py-3 font-medium text-white shadow-md transition-transform hover:scale-[1.02]"
           >
             다시 시작하기

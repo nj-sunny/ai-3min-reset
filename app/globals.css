@@ -64,6 +64,26 @@ body {
   animation: breathe-out-label 10s ease-in-out infinite;
 }
 
+@keyframes breathe-color-in {
+  0%, 40% { opacity: 1; }
+  55%, 90% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+@keyframes breathe-color-out {
+  0%, 40% { opacity: 0; }
+  55%, 90% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.animate-breathe-in-color {
+  animation: breathe-color-in 10s ease-in-out infinite;
+}
+
+.animate-breathe-out-color {
+  animation: breathe-color-out 10s ease-in-out infinite;
+}
+
 .animate-paused {
   animation-play-state: paused;
 }

@@ -97,3 +97,11 @@ export function stopAmbientSound() {
 export function isAmbientSoundRunning(): boolean {
   return ctx !== null;
 }
+
+export function suspendAmbientSound() {
+  if (ctx && ctx.state === "running") ctx.suspend();
+}
+
+export function resumeAmbientSound() {
+  if (ctx && ctx.state === "suspended") ctx.resume();
+}
