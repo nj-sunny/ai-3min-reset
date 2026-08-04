@@ -3,11 +3,15 @@ interface BreathingFlowProps {
 }
 
 // One hill = one breath cycle in a 0..300 local unit tile (rise 0-40%, hold 40-60%, fall 60-100%).
+// Straight segments (not curves) so the dot's linear keyframes land exactly on the line.
 // Repeated 3x (900 wide) so the strip can scroll by exactly one tile and loop seamlessly.
-const HILLS_PATH =
-  "M0,140 L0,130 C45,130 75,10 120,10 L180,10 C225,10 255,130 300,130 " +
-  "C345,130 375,10 420,10 L480,10 C525,10 555,130 600,130 " +
-  "C645,130 675,10 720,10 L780,10 C825,10 855,130 900,130 L900,140 Z";
+const LINE_POINTS =
+  "0,130 120,10 180,10 300,130 420,10 480,10 600,130 720,10 780,10 900,130";
+const FILL_PATH =
+  "M0,140 L0,130 L120,10 L180,10 L300,130 L420,10 L480,10 L600,130 L720,10 L780,10 L900,130 L900,140 Z";
+
+const LINE_COLOR = "#d6336c";
+const DOT_COLOR = "#ffb703";
 
 export default function BreathingFlow({ active }: BreathingFlowProps) {
   const anim = active ? "" : "animate-paused";
@@ -21,6 +25,11 @@ export default function BreathingFlow({ active }: BreathingFlowProps) {
           들이마시고
         </span>
         <span
+          className={`absolute text-sm font-medium tracking-wide text-[#8a5a63] animate-breathe-hold-label ${anim}`}
+        >
+          멈추고
+        </span>
+        <span
           className={`absolute text-sm font-medium tracking-wide text-[#8a5a63] animate-breathe-out-label ${anim}`}
         >
           내쉬고
@@ -28,7 +37,7 @@ export default function BreathingFlow({ active }: BreathingFlowProps) {
       </div>
 
       <div
-        className="relative w-full overflow-hidden rounded-3xl shadow-lg"
+        className="relative w-full overflow-hidden rounded-3xl bg-cream-100 shadow-lg"
         style={{ height: "clamp(140px, 34vw, 200px)" }}
       >
         <svg
@@ -36,31 +45,21 @@ export default function BreathingFlow({ active }: BreathingFlowProps) {
           viewBox="0 0 900 140"
           preserveAspectRatio="none"
         >
-          <defs>
-            <linearGradient
-              id="flowGradient"
-              gradientUnits="userSpaceOnUse"
-              x1="0"
-              y1="0"
-              x2="300"
-              y2="0"
-              spreadMethod="repeat"
-            >
-              <stop offset="0%" stopColor="#ff9eb5" />
-              <stop offset="20%" stopColor="#ffd6e0" />
-              <stop offset="40%" stopColor="#e6fff8" />
-              <stop offset="50%" stopColor="#e0d6ff" />
-              <stop offset="60%" stopColor="#e6fff8" />
-              <stop offset="80%" stopColor="#ffd6e0" />
-              <stop offset="100%" stopColor="#ff9eb5" />
-            </linearGradient>
-          </defs>
-          <path d={HILLS_PATH} fill="url(#flowGradient)" />
+          <path d={FILL_PATH} fill={LINE_COLOR} opacity={0.12} />
+          <polyline
+            points={LINE_POINTS}
+            fill="none"
+            stroke={LINE_COLOR}
+            strokeWidth={6}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            vectorEffect="non-scaling-stroke"
+          />
         </svg>
 
         <div
-          className={`absolute h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white shadow-md animate-flow-dot-bounce ${anim}`}
-          style={{ left: "28%" }}
+          className={`absolute h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white animate-flow-dot-bounce ${anim}`}
+          style={{ left: "40%", backgroundColor: DOT_COLOR, boxShadow: "0 2px 6px rgba(0,0,0,0.25)" }}
         />
       </div>
     </div>

@@ -45,6 +45,12 @@ body {
   100% { opacity: 0; }
 }
 
+@keyframes breathe-hold-label {
+  0%, 38% { opacity: 0; }
+  44%, 56% { opacity: 1; }
+  62%, 100% { opacity: 0; }
+}
+
 .animate-breathe-in-label {
   animation: breathe-in-label 10s ease-in-out infinite;
 }
@@ -53,16 +59,23 @@ body {
   animation: breathe-out-label 10s ease-in-out infinite;
 }
 
+.animate-breathe-hold-label {
+  animation: breathe-hold-label 10s ease-in-out infinite;
+}
+
+/* Both the track scroll and the dot's vertical position use the same
+   0/40/60/100% breakpoints with linear timing, matching the straight
+   rise/plateau/fall segments of the path exactly so the dot always
+   sits on the line instead of drifting out of phase with it. */
 @keyframes flow-scroll {
   0% { transform: translateX(0); }
   100% { transform: translateX(-33.3333%); }
 }
 
 @keyframes flow-dot-bounce {
-  0% { top: 88%; }
-  40% { top: 6%; }
-  60% { top: 6%; }
-  100% { top: 88%; }
+  0%, 20% { top: 7.14%; }
+  60% { top: 92.86%; }
+  100% { top: 7.14%; }
 }
 
 .animate-flow-scroll {
@@ -70,7 +83,7 @@ body {
 }
 
 .animate-flow-dot-bounce {
-  animation: flow-dot-bounce 10s ease-in-out infinite;
+  animation: flow-dot-bounce 10s linear infinite;
 }
 
 .animate-paused {
