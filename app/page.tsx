@@ -100,13 +100,16 @@ export default function Home() {
   }
 
   return (
-    <main className="flex min-h-screen flex-1 flex-col items-center justify-center gap-8 bg-gradient-to-b from-cream-100 via-blossom-50 to-lavender-100 px-6 py-16">
+    <main className="flex min-h-screen flex-1 flex-col items-center bg-gradient-to-b from-cream-100 via-blossom-50 to-lavender-100 px-6 py-10">
       {stage === "start" && (
-        <div className="flex w-full max-w-md flex-col items-center gap-6 text-center">
-          <h1 className="text-3xl font-semibold text-[#6b4a52]">
-            AI와 함께하는
-            <br />
-            3분 리셋 명상
+        <div className="mt-6 flex w-full max-w-md flex-col items-center gap-6 text-center">
+          <h1 className="flex flex-col items-center gap-1">
+            <span className="text-base font-medium tracking-wide text-blossom-500">
+              AI와 함께하는
+            </span>
+            <span className="bg-gradient-to-r from-blossom-500 to-blossom-600 bg-clip-text text-4xl font-bold tracking-tight text-transparent">
+              3분 리셋 명상
+            </span>
           </h1>
           <p className="text-sm text-[#9a7d84]">
             앱을 깔지 않아도 괜찮아요. 지금 느낌을 골라주시면
