@@ -33,22 +33,24 @@ body {
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }
 
+/* Phase boundaries mirror the wave path exactly (see flow-dot-bounce
+   below): hold sits at 0-20% (flat top), exhale falls 20-60% (peak to
+   valley), inhale rises 60-100% (valley back to peak). */
 @keyframes breathe-in-label {
-  0%, 4% { opacity: 0; }
-  10%, 34% { opacity: 1; }
-  40%, 100% { opacity: 0; }
+  0%, 60% { opacity: 0; }
+  66%, 90% { opacity: 1; }
+  96%, 100% { opacity: 0; }
 }
 
 @keyframes breathe-out-label {
-  0%, 60% { opacity: 0; }
-  66%, 94% { opacity: 1; }
-  100% { opacity: 0; }
+  0%, 20% { opacity: 0; }
+  26%, 50% { opacity: 1; }
+  56%, 100% { opacity: 0; }
 }
 
 @keyframes breathe-hold-label {
-  0%, 38% { opacity: 0; }
-  44%, 56% { opacity: 1; }
-  62%, 100% { opacity: 0; }
+  0%, 15% { opacity: 1; }
+  20%, 100% { opacity: 0; }
 }
 
 .animate-breathe-in-label {

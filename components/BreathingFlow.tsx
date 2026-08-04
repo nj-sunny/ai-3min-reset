@@ -2,9 +2,16 @@ interface BreathingFlowProps {
   active: boolean;
 }
 
-// One hill = one breath cycle in a 0..300 local unit tile (rise 0-40%, hold 40-60%, fall 60-100%).
-// Straight segments (not curves) so the dot's linear keyframes land exactly on the line.
-// Repeated 3x (900 wide) so the strip can scroll by exactly one tile and loop seamlessly.
+// One hill = one breath cycle in a 0..300 local unit tile: rise (x 0-120),
+// flat top/hold (120-180), fall (180-300). Straight segments (not curves) so
+// the dot's linear keyframes land exactly on the line. Repeated 3x (900 wide)
+// so the strip can scroll by exactly one tile and loop seamlessly.
+//
+// The dot sits at a fixed 40% of the (one-tile-wide) container, which at
+// animation-time 0 lines up with local x=120 - the start of the hold. So in
+// TIME (not path-x) terms the cycle order is hold[0-20%] -> exhale[20-60%]
+// -> inhale[60-100%]; see flow-dot-bounce and the breathe-*-label keyframes
+// in globals.css, which must stay in sync with these percentages.
 const LINE_POINTS =
   "0,130 120,10 180,10 300,130 420,10 480,10 600,130 720,10 780,10 900,130";
 const FILL_PATH =
@@ -18,19 +25,19 @@ export default function BreathingFlow({ active }: BreathingFlowProps) {
 
   return (
     <div className="flex w-full flex-col items-center gap-3">
-      <div className="relative flex h-6 items-center justify-center">
+      <div className="relative flex h-6 w-full items-center justify-center">
         <span
-          className={`absolute text-sm font-medium tracking-wide text-[#8a5a63] animate-breathe-in-label ${anim}`}
+          className={`absolute whitespace-nowrap text-sm font-medium tracking-wide text-[#8a5a63] animate-breathe-in-label ${anim}`}
         >
           들이마시고
         </span>
         <span
-          className={`absolute text-sm font-medium tracking-wide text-[#8a5a63] animate-breathe-hold-label ${anim}`}
+          className={`absolute whitespace-nowrap text-sm font-medium tracking-wide text-[#8a5a63] animate-breathe-hold-label ${anim}`}
         >
           멈추고
         </span>
         <span
-          className={`absolute text-sm font-medium tracking-wide text-[#8a5a63] animate-breathe-out-label ${anim}`}
+          className={`absolute whitespace-nowrap text-sm font-medium tracking-wide text-[#8a5a63] animate-breathe-out-label ${anim}`}
         >
           내쉬고
         </span>
