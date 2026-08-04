@@ -1,6 +1,7 @@
 import { MoodId } from "./moods";
 
 const STORAGE_KEY = "reset3_sessions_v1";
+const SESSION_MINUTES = 3;
 
 export interface SessionRecord {
   date: string; // YYYY-MM-DD
@@ -51,6 +52,12 @@ export function getTotalCount(): number {
   return readAll().length;
 }
 
+export function getTodayMinutes(): number {
+  const todayKey = toDateKey(new Date());
+  const count = readAll().filter((r) => r.date === todayKey).length;
+  return count * SESSION_MINUTES;
+}
+
 export function getStreak(): number {
   const days = new Set(readAll().map((r) => r.date));
   let streak = 0;
@@ -68,12 +75,13 @@ export interface HistorySnapshot {
   sessions: SessionRecord[];
   streak: number;
   total: number;
+  todayMinutes: number;
 }
 
 const listeners = new Set<() => void>();
 let cachedRaw: string | null | undefined;
 let cachedSnapshot: HistorySnapshot | null = null;
-const EMPTY_SNAPSHOT: HistorySnapshot = { sessions: [], streak: 0, total: 0 };
+const EMPTY_SNAPSHOT: HistorySnapshot = { sessions: [], streak: 0, total: 0, todayMinutes: 0 };
 
 function notifyListeners() {
   listeners.forEach((l) => l());
@@ -91,7 +99,12 @@ export function getSessionsSnapshot(): HistorySnapshot {
   const raw = window.localStorage.getItem(STORAGE_KEY);
   if (cachedSnapshot && raw === cachedRaw) return cachedSnapshot;
   cachedRaw = raw;
-  cachedSnapshot = { sessions: getSessions(), streak: getStreak(), total: getTotalCount() };
+  cachedSnapshot = {
+    sessions: getSessions(),
+    streak: getStreak(),
+    total: getTotalCount(),
+    todayMinutes: getTodayMinutes(),
+  };
   return cachedSnapshot;
 }
 

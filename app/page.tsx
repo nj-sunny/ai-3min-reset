@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import MoodPicker from "@/components/MoodPicker";
 import BreathingFlow from "@/components/BreathingFlow";
@@ -9,7 +9,14 @@ import GuideText from "@/components/GuideText";
 import SoundToggle from "@/components/SoundToggle";
 import SessionControls from "@/components/SessionControls";
 import { MoodId, getMood } from "@/lib/moods";
-import { addSession, getStreak, getTotalCount } from "@/lib/sessionStore";
+import {
+  addSession,
+  getStreak,
+  getTotalCount,
+  getSessionsSnapshot,
+  getSessionsServerSnapshot,
+  subscribeSessions,
+} from "@/lib/sessionStore";
 import { suspendAmbientSound, resumeAmbientSound } from "@/lib/ambientSound";
 
 const SESSION_SECONDS = 180;
@@ -24,6 +31,11 @@ export default function Home() {
   const [paused, setPaused] = useState(false);
   const [streak, setStreak] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
+  const { todayMinutes } = useSyncExternalStore(
+    subscribeSessions,
+    getSessionsSnapshot,
+    getSessionsServerSnapshot,
+  );
 
   // ticks elapsed forward while the session is active and not paused
   useEffect(() => {
@@ -43,19 +55,19 @@ export default function Home() {
     return () => clearInterval(id);
   }, [stage, paused, moodId]);
 
-  async function handleStart() {
-    if (!moodId) return;
+  async function handleStart(id: MoodId) {
+    setMoodId(id);
     setStage("loading");
     try {
       const res = await fetch("/api/generate-script", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ moodId }),
+        body: JSON.stringify({ moodId: id }),
       });
       const data = await res.json();
-      setParagraphs(data.paragraphs ?? getMood(moodId).fallback);
+      setParagraphs(data.paragraphs ?? getMood(id).fallback);
     } catch {
-      setParagraphs(getMood(moodId).fallback);
+      setParagraphs(getMood(id).fallback);
     }
     setPaused(false);
     setElapsed(0);
@@ -91,9 +103,6 @@ export default function Home() {
     <main className="flex min-h-screen flex-1 flex-col items-center justify-center gap-8 bg-gradient-to-b from-cream-100 via-blossom-50 to-lavender-100 px-6 py-16">
       {stage === "start" && (
         <div className="flex w-full max-w-md flex-col items-center gap-6 text-center">
-          <p className="rounded-full bg-blossom-100 px-3 py-1 text-xs font-medium text-blossom-600">
-            탭 20개 켜둔 채로 3분만
-          </p>
           <h1 className="text-3xl font-semibold text-[#6b4a52]">
             AI와 함께하는
             <br />
@@ -104,15 +113,10 @@ export default function Home() {
             <br />
             AI가 딱 맞는 3분 명상을 준비해 드려요.
           </p>
-          <MoodPicker selected={moodId} onSelect={setMoodId} />
-          <button
-            type="button"
-            disabled={!moodId}
-            onClick={handleStart}
-            className="w-full max-w-xs rounded-full bg-blossom-500 py-3 font-medium text-white shadow-md transition-transform enabled:hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            3분만 리셋하기
-          </button>
+          <MoodPicker selected={moodId} onSelect={handleStart} />
+          <p className="text-sm text-[#8a5a63]">
+            오늘 누적 명상 시간 <span className="font-semibold text-blossom-600">{todayMinutes}분</span>
+          </p>
           <Link href="/history" className="text-xs text-[#9a7d84] underline underline-offset-2">
             나의 기록 보기
           </Link>
