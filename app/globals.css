@@ -1,0 +1,69 @@
+@import "tailwindcss";
+
+:root {
+  --background: #fff9f5;
+  --foreground: #6b4a52;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+
+  --color-blossom-50: #fff5f7;
+  --color-blossom-100: #ffe7ec;
+  --color-blossom-200: #ffd6e0;
+  --color-blossom-300: #ffbdcf;
+  --color-blossom-400: #ff9eb5;
+  --color-blossom-500: #ff7fa0;
+  --color-blossom-600: #f2618a;
+
+  --color-lavender-100: #f1ecff;
+  --color-lavender-200: #e0d6ff;
+  --color-mint-100: #e6fff8;
+  --color-mint-200: #d6fff2;
+  --color-cream-100: #fff9f5;
+  --color-cream-200: #fff3d6;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+@keyframes breathe-scale {
+  0% { transform: scale(0.82); }
+  40% { transform: scale(1.15); }
+  60% { transform: scale(1.15); }
+  100% { transform: scale(0.82); }
+}
+
+@keyframes breathe-in-label {
+  0%, 4% { opacity: 0; }
+  10%, 34% { opacity: 1; }
+  40%, 100% { opacity: 0; }
+}
+
+@keyframes breathe-out-label {
+  0%, 60% { opacity: 0; }
+  66%, 94% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.animate-breathe-scale {
+  animation: breathe-scale 10s ease-in-out infinite;
+}
+
+.animate-breathe-in-label {
+  animation: breathe-in-label 10s ease-in-out infinite;
+}
+
+.animate-breathe-out-label {
+  animation: breathe-out-label 10s ease-in-out infinite;
+}
+
+.animate-paused {
+  animation-play-state: paused;
+}
