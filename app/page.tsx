@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import MoodPicker from "@/components/MoodPicker";
-import BreathingOrb from "@/components/BreathingOrb";
+import BreathingFlow from "@/components/BreathingFlow";
 import SessionTimer from "@/components/SessionTimer";
 import GuideText from "@/components/GuideText";
 import SoundToggle from "@/components/SoundToggle";
@@ -129,7 +129,7 @@ export default function Home() {
       {stage === "session" && (
         <div className="flex w-full max-w-md flex-col items-center gap-8">
           <SoundToggle />
-          <BreathingOrb active={!paused && elapsed < SESSION_SECONDS} />
+          <BreathingFlow active={!paused && elapsed < SESSION_SECONDS} />
           <GuideText paragraphs={paragraphs} elapsedSeconds={elapsed} totalSeconds={SESSION_SECONDS} />
           <SessionTimer remainingSeconds={SESSION_SECONDS - elapsed} totalSeconds={SESSION_SECONDS} />
           <SessionControls

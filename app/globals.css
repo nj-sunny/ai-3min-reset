@@ -33,13 +33,6 @@ body {
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }
 
-@keyframes breathe-scale {
-  0% { transform: scale(0.82); }
-  40% { transform: scale(1.15); }
-  60% { transform: scale(1.15); }
-  100% { transform: scale(0.82); }
-}
-
 @keyframes breathe-in-label {
   0%, 4% { opacity: 0; }
   10%, 34% { opacity: 1; }
@@ -52,10 +45,6 @@ body {
   100% { opacity: 0; }
 }
 
-.animate-breathe-scale {
-  animation: breathe-scale 10s ease-in-out infinite;
-}
-
 .animate-breathe-in-label {
   animation: breathe-in-label 10s ease-in-out infinite;
 }
@@ -64,24 +53,24 @@ body {
   animation: breathe-out-label 10s ease-in-out infinite;
 }
 
-@keyframes breathe-color-in {
-  0%, 40% { opacity: 1; }
-  55%, 90% { opacity: 0; }
-  100% { opacity: 1; }
+@keyframes flow-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-33.3333%); }
 }
 
-@keyframes breathe-color-out {
-  0%, 40% { opacity: 0; }
-  55%, 90% { opacity: 1; }
-  100% { opacity: 0; }
+@keyframes flow-dot-bounce {
+  0% { top: 88%; }
+  40% { top: 6%; }
+  60% { top: 6%; }
+  100% { top: 88%; }
 }
 
-.animate-breathe-in-color {
-  animation: breathe-color-in 10s ease-in-out infinite;
+.animate-flow-scroll {
+  animation: flow-scroll 10s linear infinite;
 }
 
-.animate-breathe-out-color {
-  animation: breathe-color-out 10s ease-in-out infinite;
+.animate-flow-dot-bounce {
+  animation: flow-dot-bounce 10s ease-in-out infinite;
 }
 
 .animate-paused {
