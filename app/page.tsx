@@ -8,7 +8,7 @@ import SessionTimer from "@/components/SessionTimer";
 import GuideText from "@/components/GuideText";
 import SoundToggle from "@/components/SoundToggle";
 import SessionControls from "@/components/SessionControls";
-import { MoodId, getMood } from "@/lib/moods";
+import { MoodId, getMood, pickRandomScript } from "@/lib/moods";
 import {
   addSession,
   getStreak,
@@ -55,23 +55,15 @@ export default function Home() {
     return () => clearInterval(id);
   }, [stage, paused, moodId]);
 
-  async function handleStart(id: MoodId) {
+  function handleStart(id: MoodId) {
     setMoodId(id);
     setStage("loading");
-    try {
-      const res = await fetch("/api/generate-script", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ moodId: id }),
-      });
-      const data = await res.json();
-      setParagraphs(data.paragraphs ?? getMood(id).fallback);
-    } catch {
-      setParagraphs(getMood(id).fallback);
-    }
-    setPaused(false);
-    setElapsed(0);
-    setStage("session");
+    setTimeout(() => {
+      setParagraphs(pickRandomScript(getMood(id)));
+      setPaused(false);
+      setElapsed(0);
+      setStage("session");
+    }, 500);
   }
 
   function handleRestartSession() {
@@ -123,7 +115,7 @@ export default function Home() {
           <p className="text-sm text-[#9a7d84]">
             앱을 깔지 않아도 괜찮아요. 지금 느낌을 골라주시면
             <br />
-            AI가 딱 맞는 3분 명상을 준비해 드려요.
+            딱 맞는 3분 명상을 준비해 드려요.
           </p>
           <MoodPicker selected={moodId} onSelect={handleStart} />
           <p className="text-sm text-[#8a5a63]">
