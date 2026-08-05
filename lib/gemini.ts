@@ -28,6 +28,10 @@ export async function generateMeditationScript(mood: Mood): Promise<string[]> {
       generationConfig: {
         responseMimeType: "application/json",
         temperature: 0.9,
+        // this is a straightforward creative-writing task, not a reasoning
+        // task - disable "thinking" since it was ~2/3 of response latency
+        // (1345 of 2003 tokens in a measured 10.4s call) for no quality gain
+        thinkingConfig: { thinkingBudget: 0 },
       },
     }),
   });
