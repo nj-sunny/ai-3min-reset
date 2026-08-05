@@ -106,7 +106,8 @@
     100% { top: 7.14%; }
   }
 
-  .guide-text { min-height:72px; max-width:340px; text-align:center; font-size:18px; line-height:1.6; color:var(--ink); margin:0; transition:opacity .1s linear; }
+  .guide-text { min-height:72px; max-width:340px; text-align:center; font-size:18px; line-height:1.6; color:var(--ink); margin:0; }
+  .guide-text span { transition:opacity .1s linear; }
   .flow-caption { width:100%; margin:8px 0 0; text-align:right; font-size:12px; color:var(--ink-soft); }
 
   .timer-wrap { display:flex; flex-direction:column; align-items:center; gap:8px; width:100%; max-width:280px; }
@@ -378,19 +379,37 @@
     return m + ":" + (s < 10 ? "0" + s : s);
   }
 
-  var GUIDE_FADE_IN_SECONDS = 3.5;
+  var WORD_FADE_SECONDS = 1.5;
+  var WORD_GAP_SECONDS = 2.5;
   var GUIDE_HOLD_SECONDS = 6;
-  var GUIDE_CYCLE_SECONDS = GUIDE_FADE_IN_SECONDS + GUIDE_HOLD_SECONDS;
 
-  function computeGuideDisplay(paragraphs, elapsedSeconds) {
-    if (!paragraphs.length) return { text: "", opacity: 0 };
-    var rawIndex = Math.floor(elapsedSeconds / GUIDE_CYCLE_SECONDS);
-    var currentIndex = Math.min(paragraphs.length - 1, rawIndex);
-    var text = paragraphs[currentIndex];
-    // once the last paragraph's own cycle has passed, just hold it fully visible
-    var localElapsed = rawIndex > currentIndex ? GUIDE_CYCLE_SECONDS : elapsedSeconds - currentIndex * GUIDE_CYCLE_SECONDS;
-    var opacity = Math.min(1, localElapsed / GUIDE_FADE_IN_SECONDS);
-    return { text: text, opacity: opacity };
+  function splitWords(paragraph) {
+    return paragraph.split(/\s+/).filter(function (w) { return w.length > 0; });
+  }
+
+  // time to reveal every word in a paragraph, one every WORD_GAP_SECONDS
+  function getRevealDuration(words) {
+    return words.length > 0 ? (words.length - 1) * WORD_GAP_SECONDS + WORD_FADE_SECONDS : 0;
+  }
+
+  function computeGuideState(paragraphs, elapsedSeconds) {
+    if (!paragraphs.length) return { words: [], localElapsed: 0 };
+    var remaining = elapsedSeconds;
+    var index = 0;
+    var localElapsed = 0;
+    for (var i = 0; i < paragraphs.length; i++) {
+      var words = splitWords(paragraphs[i]);
+      var cycle = getRevealDuration(words) + GUIDE_HOLD_SECONDS;
+      var isLast = i === paragraphs.length - 1;
+      if (remaining < cycle || isLast) {
+        index = i;
+        // clamp so the last paragraph just stays fully revealed once its own cycle passes
+        localElapsed = Math.min(remaining, cycle);
+        break;
+      }
+      remaining -= cycle;
+    }
+    return { words: splitWords(paragraphs[index]), localElapsed: localElapsed };
   }
 
   function stopTicking() { if (tickInterval) { clearInterval(tickInterval); tickInterval = null; } }
@@ -422,9 +441,12 @@
     if (timerText) timerText.textContent = formatTime(remaining);
     if (timerBar) timerBar.style.width = (progress * 100) + "%";
     if (guideText) {
-      var guideDisplay = computeGuideDisplay(state.paragraphs, state.elapsed);
-      guideText.textContent = guideDisplay.text;
-      guideText.style.opacity = guideDisplay.opacity;
+      var guideState = computeGuideState(state.paragraphs, state.elapsed);
+      guideText.innerHTML = guideState.words.map(function (word, i) {
+        var wordStart = i * WORD_GAP_SECONDS;
+        var opacity = Math.min(1, Math.max(0, (guideState.localElapsed - wordStart) / WORD_FADE_SECONDS));
+        return '<span style="opacity:' + opacity + '">' + escapeHtml(word) + " </span>";
+      }).join("");
     }
     var shouldBeActive = !state.paused && state.elapsed < SESSION_SECONDS;
     var animEls = document.querySelectorAll(".flow-anim-el");
