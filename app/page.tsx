@@ -136,7 +136,7 @@ export default function Home() {
       {stage === "session" && (
         <div className="flex w-full max-w-md flex-col items-center gap-8">
           <SoundToggle />
-          <BreathingFlow active={!paused && elapsed < SESSION_SECONDS} />
+          <BreathingFlow active={!paused && elapsed < SESSION_SECONDS} color={getMood(moodId).color} />
           <GuideText paragraphs={paragraphs} elapsedSeconds={elapsed} totalSeconds={SESSION_SECONDS} />
           <SessionTimer remainingSeconds={SESSION_SECONDS - elapsed} totalSeconds={SESSION_SECONDS} />
           <SessionControls

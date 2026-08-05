@@ -65,23 +65,30 @@
   .sound-toggle:hover { background:#fff; }
 
   .flow-wrap { display:flex; flex-direction:column; align-items:center; gap:12px; width:100%; }
-  .flow-labels { position:relative; height:24px; width:100%; display:flex; align-items:center; justify-content:center; }
-  .label { position:absolute; white-space:nowrap; font-size:14px; font-weight:500; letter-spacing:.02em; color:var(--ink-mid); }
-  .label-in { animation: breathe-in-label 10s ease-in-out infinite; }
-  .label-hold { animation: breathe-hold-label 10s ease-in-out infinite; }
-  .label-out { animation: breathe-out-label 10s ease-in-out infinite; }
 
   .flow-track {
     position:relative; width:100%; height:clamp(140px, 34vw, 200px);
-    overflow:hidden; border-radius:24px; background:var(--cream-100); box-shadow:0 10px 25px rgba(0,0,0,0.08);
+    overflow:hidden; border-radius:24px;
+    background: radial-gradient(120% 100% at 30% 0%, rgba(120,130,255,0.12), transparent 60%), #0a0e17;
+    box-shadow:0 10px 25px rgba(0,0,0,0.25);
   }
   .flow-svg { position:absolute; inset:0; height:100%; width:300%; animation: flow-scroll 10s linear infinite; }
+  .flow-color-clip { position:absolute; inset:0; clip-path: inset(0 60% 0 0); }
   .flow-dot {
-    position:absolute; left:40%; width:20px; height:20px; border-radius:50%;
-    background:#ffb703; border:2px solid #fff; box-shadow:0 2px 6px rgba(0,0,0,.25);
+    position:absolute; left:40%; width:32px; height:32px; border-radius:50%;
     transform: translate(-50%, -50%); animation: flow-dot-bounce 10s linear infinite;
   }
   .paused { animation-play-state: paused; }
+
+  .label-pill {
+    position:absolute; display:inline-flex; align-items:center; white-space:nowrap;
+    padding:6px 14px; border-radius:999px; background:rgba(255,255,255,0.1);
+    border:1px solid rgba(255,255,255,0.25); color:#fff; font-size:13px; font-weight:600;
+    letter-spacing:0.02em; -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+  }
+  .label-in { animation: breathe-in-label 10s ease-in-out infinite; }
+  .label-hold { animation: breathe-hold-label 10s ease-in-out infinite; }
+  .label-out { animation: breathe-out-label 10s ease-in-out infinite; }
 
   /* Phase boundaries mirror the path: hold 0-20% (flat top), exhale 20-60% (peak->valley),
      inhale 60-100% (valley->peak). Keep in sync with flow-dot-bounce below. */
@@ -89,7 +96,14 @@
   @keyframes breathe-out-label { 0%,20%{opacity:0} 26%,50%{opacity:1} 56%,100%{opacity:0} }
   @keyframes breathe-hold-label { 0%,15%{opacity:1} 20%,100%{opacity:0} }
   @keyframes flow-scroll { 0%{transform:translateX(0)} 100%{transform:translateX(-33.3333%)} }
-  @keyframes flow-dot-bounce { 0%,20%{top:7.14%} 60%{top:92.86%} 100%{top:7.14%} }
+  /* Dot easing uses cubic-bezier(1/3,0,2/3,1) - the exact curve that reproduces the
+     path's smoothstep segments - so it always sits exactly on the line. */
+  @keyframes flow-dot-bounce {
+    0% { top: 7.14%; }
+    20% { top: 7.14%; animation-timing-function: cubic-bezier(0.3333, 0, 0.6667, 1); }
+    60% { top: 92.86%; animation-timing-function: cubic-bezier(0.3333, 0, 0.6667, 1); }
+    100% { top: 7.14%; }
+  }
 
   .guide-text { min-height:72px; max-width:340px; text-align:center; font-size:18px; line-height:1.6; color:var(--ink); margin:0; }
 
@@ -144,11 +158,19 @@
 
   var SESSION_SECONDS = 180;
 
+  // Smoothstep curve: same corner positions as before (0,120,180,300) so the
+  // dot's cubic-bezier(1/3,0,2/3,1) keyframes land exactly on the line.
+  var LINE_D =
+    "M0,130 C40,130 80,10 120,10 L180,10 C220,10 260,130 300,130 " +
+    "C340,130 380,10 420,10 L480,10 C520,10 560,130 600,130 " +
+    "C640,130 680,10 720,10 L780,10 C820,10 860,130 900,130";
+
   // ---- moods (preset scripts only, no API) ----
   var MOODS = [
     {
       id: "stress", emoji: "😵‍💫", label: "스트레스 받았어요",
       description: "머리가 지끈거리고 마음이 조급해요",
+      color: "#ff4d8f",
       fallback: [
         "잠시 키보드에서 손을 떼고, 화면에서 눈을 떼어 보세요.",
         "지금 어깨가 얼마나 올라가 있는지 느껴보세요. 그리고 스르르 내려놓아 봅니다.",
@@ -164,6 +186,7 @@
     {
       id: "fatigue", emoji: "🥱", label: "피곤해요",
       description: "뇌에 안개가 낀 것처럼 멍해요",
+      color: "#ffa94d",
       fallback: [
         "눈을 감고, 어깨의 무게를 의자에 완전히 내려놓아 보세요.",
         "오늘 하루 화면을 얼마나 많이 봤는지 떠올려 보세요. 지금은 눈이 쉴 시간입니다.",
@@ -179,6 +202,7 @@
     {
       id: "focus", emoji: "📉", label: "집중이 안 돼요",
       description: "탭을 너무 많이 켜놔서 산만해요",
+      color: "#38bdf8",
       fallback: [
         "잠시 머릿속에 열려 있는 탭들을 떠올려 보세요. 지금은 다 닫아도 괜찮습니다.",
         "오직 하나, 당신의 숨에만 집중해 볼게요.",
@@ -194,6 +218,7 @@
     {
       id: "rest", emoji: "🌙", label: "그냥 쉬고 싶어요",
       description: "특별한 이유 없이 잠시 멈추고 싶어요",
+      color: "#51cf66",
       fallback: [
         "지금 이 순간, 아무것도 하지 않아도 괜찮습니다.",
         "눈을 감고, 의자에 몸을 편안히 기대어 보세요.",
@@ -471,23 +496,28 @@
 
   function renderSession() {
     soundEnabled = true;
+    var moodColor = getMood(state.moodId).color;
     app.innerHTML =
       '<div class="screen-session">' +
         '<button type="button" id="soundToggleBtn" class="sound-toggle">' +
           '<span id="soundIcon">🔊</span><span id="soundLabel">소리 켜짐</span>' +
         "</button>" +
         '<div class="flow-wrap">' +
-          '<div class="flow-labels">' +
-            '<span class="label label-in flow-anim-el">들이마시고</span>' +
-            '<span class="label label-hold flow-anim-el">멈추고</span>' +
-            '<span class="label label-out flow-anim-el">내쉬고</span>' +
-          "</div>" +
-          '<div class="flow-track">' +
+          '<div class="flow-track" style="--breath-color:' + moodColor + '">' +
             '<svg class="flow-svg flow-anim-el" viewBox="0 0 900 140" preserveAspectRatio="none">' +
-              '<path d="M0,140 L0,130 L120,10 L180,10 L300,130 L420,10 L480,10 L600,130 L720,10 L780,10 L900,130 L900,140 Z" fill="#d6336c" opacity="0.12"></path>' +
-              '<polyline points="0,130 120,10 180,10 300,130 420,10 480,10 600,130 720,10 780,10 900,130" fill="none" stroke="#d6336c" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"></polyline>' +
+              '<path d="' + LINE_D + '" fill="none" stroke="#4b5563" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"></path>' +
             "</svg>" +
-            '<div class="flow-dot flow-anim-el"></div>' +
+            '<div class="flow-color-clip">' +
+              '<svg class="flow-svg flow-anim-el" viewBox="0 0 900 140" preserveAspectRatio="none" style="filter: drop-shadow(0 0 4px var(--breath-color)) drop-shadow(0 0 14px var(--breath-color));">' +
+                '<path d="' + LINE_D + '" fill="none" stroke="var(--breath-color)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"></path>' +
+              "</svg>" +
+            "</div>" +
+            '<div class="flow-dot flow-anim-el" style="background:var(--breath-color); box-shadow:0 0 10px var(--breath-color), 0 0 28px var(--breath-color);"></div>' +
+            '<div style="position:absolute; left:16px; top:16px; height:32px;">' +
+              '<span class="label-pill label-in flow-anim-el">들이마시고</span>' +
+              '<span class="label-pill label-hold flow-anim-el">멈추고</span>' +
+              '<span class="label-pill label-out flow-anim-el">내쉬고</span>' +
+            "</div>" +
           "</div>" +
         "</div>" +
         '<p id="guideText" class="guide-text"></p>' +

@@ -5,6 +5,7 @@ export interface Mood {
   emoji: string;
   label: string;
   description: string;
+  color: string;
   promptHint: string;
   fallback: string[];
 }
@@ -15,6 +16,7 @@ export const MOODS: Mood[] = [
     emoji: "😵‍💫",
     label: "스트레스 받았어요",
     description: "머리가 지끈거리고 마음이 조급해요",
+    color: "#ff4d8f",
     promptHint:
       "마감과 회의 스트레스로 어깨가 굳고 마음이 조급한 직장인을 위해, 긴장을 내려놓게 하는 톤으로",
     fallback: [
@@ -34,6 +36,7 @@ export const MOODS: Mood[] = [
     emoji: "🥱",
     label: "피곤해요",
     description: "뇌에 안개가 낀 것처럼 멍해요",
+    color: "#ffa94d",
     promptHint:
       "디지털 피로와 브레인 포그로 멍한 직장인을 위해, 부드럽게 정신을 환기시키는 톤으로",
     fallback: [
@@ -53,6 +56,7 @@ export const MOODS: Mood[] = [
     emoji: "📉",
     label: "집중이 안 돼요",
     description: "탭을 너무 많이 켜놔서 산만해요",
+    color: "#38bdf8",
     promptHint:
       "브라우저 탭을 20개 넘게 켜두고 산만해진 직장인을 위해, 하나에 집중하도록 도와주는 톤으로",
     fallback: [
@@ -72,6 +76,7 @@ export const MOODS: Mood[] = [
     emoji: "🌙",
     label: "그냥 쉬고 싶어요",
     description: "특별한 이유 없이 잠시 멈추고 싶어요",
+    color: "#51cf66",
     promptHint:
       "특별한 이유 없이 그냥 잠시 멈추고 쉬고 싶은 직장인을 위해, 편안하고 따뜻한 톤으로",
     fallback: [
