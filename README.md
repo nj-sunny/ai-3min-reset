@@ -32,7 +32,16 @@ API 키가 없어도 미리 준비된 프리셋 스크립트로 정상 동작합
 - `lib/gemini.ts` — Gemini REST 호출 + 프롬프트
 - `lib/ambientSound.ts` — Web Audio API로 생성하는 앰비언트 사운드
 - `lib/sessionStore.ts` — localStorage 기반 세션 기록/스트릭
-- `components/` — MoodPicker, BreathingOrb, SessionTimer, GuideText, SoundToggle
+- `components/` — MoodPicker, BreathingFlow, SessionTimer, GuideText, SoundToggle, SessionControls
+
+## 단일 HTML 버전 (API 없이)
+
+`public/standalone.html`은 서버/빌드/API 없이 그 파일 하나만으로 동작하는 독립 실행 버전입니다.
+
+- Gemini 연동 없이 무드별 프리셋 스크립트만 사용 (API 키 불필요, 외부 요청 전혀 없음)
+- 기분 선택 → 호흡 파형 애니메이션 → 타이머 → 완료 → 기록까지 동일한 기능 제공
+- 파일 하나만 복사해서 어디서든(로컬 더블클릭, USB, 이메일 첨부, 아무 정적 호스팅) 바로 열어볼 수 있음
+- 이 레포를 Vercel에 배포하면 `/standalone.html` 경로로도 접근 가능
 
 ## Vercel 배포
 

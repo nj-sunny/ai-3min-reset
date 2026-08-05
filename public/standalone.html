@@ -1,0 +1,607 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>3분 리셋 | AI 명상 (독립 실행 버전)</title>
+<style>
+  :root {
+    --blossom-50:#fff5f7; --blossom-100:#ffe7ec; --blossom-200:#ffd6e0; --blossom-300:#ffbdcf;
+    --blossom-400:#ff9eb5; --blossom-500:#ff7fa0; --blossom-600:#f2618a;
+    --lavender-100:#f1ecff; --lavender-200:#e0d6ff;
+    --mint-100:#e6fff8; --mint-200:#d6fff2;
+    --cream-100:#fff9f5; --cream-200:#fff3d6;
+    --ink:#6b4a52; --ink-soft:#9a7d84; --ink-mid:#8a5a63;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    min-height: 100vh;
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    background: linear-gradient(to bottom, var(--cream-100), var(--blossom-50), var(--lavender-100));
+    color: var(--ink);
+    display: flex;
+    justify-content: center;
+    padding: 40px 24px;
+  }
+  #app { width: 100%; max-width: 420px; display: flex; flex-direction: column; align-items: center; }
+
+  .screen-start, .screen-complete, .screen-history { display:flex; flex-direction:column; align-items:center; gap:24px; width:100%; text-align:center; }
+  .screen-session { display:flex; flex-direction:column; align-items:center; gap:32px; width:100%; text-align:center; }
+  .screen-loading { display:flex; flex-direction:column; align-items:center; gap:16px; padding-top: 80px; }
+
+  .title { display:flex; flex-direction:column; align-items:center; gap:4px; margin:0; }
+  .title-sub { font-size:16px; font-weight:500; letter-spacing:.02em; color:var(--blossom-500); }
+  .title-main {
+    font-size:36px; font-weight:700; letter-spacing:-0.01em;
+    background: linear-gradient(to right, var(--blossom-500), var(--blossom-600));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+
+  .muted { font-size:14px; color:var(--ink-soft); margin:0; line-height:1.6; }
+  .link-muted { font-size:12px; color:var(--ink-soft); text-decoration:underline; text-underline-offset:2px; background:none; border:none; cursor:pointer; font-family:inherit; }
+
+  .mood-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; width:100%; }
+  .mood-card {
+    display:flex; flex-direction:column; align-items:flex-start; gap:4px;
+    border-radius:16px; border:2px solid transparent; background:rgba(255,255,255,0.7);
+    padding:16px; text-align:left; cursor:pointer; transition: all .15s ease; font-family:inherit;
+  }
+  .mood-card:hover { border-color: var(--blossom-200); background: var(--blossom-50); }
+  .mood-emoji { font-size:24px; }
+  .mood-label { font-weight:500; color:var(--ink); font-size:15px; }
+  .mood-desc { font-size:12px; color:var(--ink-soft); }
+
+  .today-stat { font-size:14px; color:var(--ink-mid); margin:0; }
+  .today-stat-num { font-weight:600; color:var(--blossom-600); }
+
+  .spinner { width:48px; height:48px; border-radius:50%; border:4px solid var(--blossom-200); border-top-color:var(--blossom-500); animation:spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .sound-toggle {
+    display:inline-flex; align-items:center; gap:6px; border-radius:999px; background:rgba(255,255,255,0.7);
+    padding:6px 12px; font-size:12px; color:var(--ink-mid); border:none; cursor:pointer; font-family:inherit;
+  }
+  .sound-toggle:hover { background:#fff; }
+
+  .flow-wrap { display:flex; flex-direction:column; align-items:center; gap:12px; width:100%; }
+  .flow-labels { position:relative; height:24px; width:100%; display:flex; align-items:center; justify-content:center; }
+  .label { position:absolute; white-space:nowrap; font-size:14px; font-weight:500; letter-spacing:.02em; color:var(--ink-mid); }
+  .label-in { animation: breathe-in-label 10s ease-in-out infinite; }
+  .label-hold { animation: breathe-hold-label 10s ease-in-out infinite; }
+  .label-out { animation: breathe-out-label 10s ease-in-out infinite; }
+
+  .flow-track {
+    position:relative; width:100%; height:clamp(140px, 34vw, 200px);
+    overflow:hidden; border-radius:24px; background:var(--cream-100); box-shadow:0 10px 25px rgba(0,0,0,0.08);
+  }
+  .flow-svg { position:absolute; inset:0; height:100%; width:300%; animation: flow-scroll 10s linear infinite; }
+  .flow-dot {
+    position:absolute; left:40%; width:20px; height:20px; border-radius:50%;
+    background:#ffb703; border:2px solid #fff; box-shadow:0 2px 6px rgba(0,0,0,.25);
+    transform: translate(-50%, -50%); animation: flow-dot-bounce 10s linear infinite;
+  }
+  .paused { animation-play-state: paused; }
+
+  /* Phase boundaries mirror the path: hold 0-20% (flat top), exhale 20-60% (peak->valley),
+     inhale 60-100% (valley->peak). Keep in sync with flow-dot-bounce below. */
+  @keyframes breathe-in-label { 0%,60%{opacity:0} 66%,90%{opacity:1} 96%,100%{opacity:0} }
+  @keyframes breathe-out-label { 0%,20%{opacity:0} 26%,50%{opacity:1} 56%,100%{opacity:0} }
+  @keyframes breathe-hold-label { 0%,15%{opacity:1} 20%,100%{opacity:0} }
+  @keyframes flow-scroll { 0%{transform:translateX(0)} 100%{transform:translateX(-33.3333%)} }
+  @keyframes flow-dot-bounce { 0%,20%{top:7.14%} 60%{top:92.86%} 100%{top:7.14%} }
+
+  .guide-text { min-height:72px; max-width:340px; text-align:center; font-size:18px; line-height:1.6; color:var(--ink); margin:0; }
+
+  .timer-wrap { display:flex; flex-direction:column; align-items:center; gap:8px; width:100%; max-width:280px; }
+  .timer-text { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size:24px; color:var(--ink); font-variant-numeric: tabular-nums; }
+  .timer-track { width:100%; height:6px; border-radius:999px; background:var(--blossom-100); overflow:hidden; }
+  .timer-bar { height:100%; border-radius:999px; background:var(--blossom-400); width:0%; }
+
+  .controls { display:flex; align-items:center; gap:16px; }
+  .ctrl-btn {
+    display:flex; align-items:center; justify-content:center; width:44px; height:44px; border-radius:50%;
+    background:rgba(255,255,255,0.7); border:none; font-size:18px; color:var(--ink-mid); cursor:pointer;
+  }
+  .ctrl-btn:hover { background:#fff; }
+  .ctrl-btn-main {
+    width:56px; height:56px; background:var(--blossom-500); color:#fff; font-size:20px;
+    box-shadow:0 4px 10px rgba(0,0,0,.15); transition: transform .15s ease;
+  }
+  .ctrl-btn-main:hover { transform: scale(1.05); }
+
+  .big-emoji { font-size:40px; }
+  h2 { font-size:24px; font-weight:600; color:var(--ink); margin:0; }
+
+  .stat-card { display:flex; gap:16px; border-radius:16px; background:rgba(255,255,255,0.7); padding:16px 24px; }
+  .stat { display:flex; flex-direction:column; align-items:center; }
+  .stat-num { font-size:20px; font-weight:600; color:var(--blossom-600); }
+  .stat-label { font-size:12px; color:var(--ink-soft); }
+  .stat-divider { width:1px; background:var(--blossom-100); }
+
+  .btn-primary {
+    display:block; width:100%; max-width:280px; border-radius:999px; background:var(--blossom-500); color:#fff;
+    padding:12px 0; font-weight:500; border:none; cursor:pointer; box-shadow:0 4px 10px rgba(0,0,0,.12);
+    font-size:15px; font-family:inherit; text-decoration:none; text-align:center; transition: transform .15s ease;
+  }
+  .btn-primary:hover { transform: scale(1.02); }
+
+  .history-title { font-size:24px; font-weight:600; color:var(--ink); margin:0; }
+  .history-list { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px; width:100%; }
+  .history-item { display:flex; align-items:center; gap:12px; border-radius:12px; background:rgba(255,255,255,0.7); padding:12px 16px; }
+  .history-emoji { font-size:20px; }
+  .history-info { display:flex; flex-direction:column; flex:1; text-align:left; }
+  .history-mood { font-size:14px; font-weight:500; color:var(--ink); }
+  .history-date { font-size:12px; color:var(--ink-soft); }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  var SESSION_SECONDS = 180;
+
+  // ---- moods (preset scripts only, no API) ----
+  var MOODS = [
+    {
+      id: "stress", emoji: "😵‍💫", label: "스트레스 받았어요",
+      description: "머리가 지끈거리고 마음이 조급해요",
+      fallback: [
+        "잠시 키보드에서 손을 떼고, 화면에서 눈을 떼어 보세요.",
+        "지금 어깨가 얼마나 올라가 있는지 느껴보세요. 그리고 스르르 내려놓아 봅니다.",
+        "숨을 코로 천천히 들이마십니다. 넷을 세는 동안 배가 부풀어 오릅니다.",
+        "잠시 멈춥니다. 그리고 입으로 길게, 천천히 내쉽니다.",
+        "지금 이 순간, 마감도 회의도 잠시 존재하지 않습니다. 여기엔 숨과 당신만 있습니다.",
+        "다시 한 번 들이마시고, 이번엔 조금 더 길게 내쉬어 봅니다.",
+        "몸의 긴장이 파도처럼 빠져나간다고 상상해 보세요.",
+        "괜찮습니다. 잠깐의 멈춤이 다음 세 시간을 더 낫게 만들어 줄 거예요.",
+        "마지막으로 크게 한 번 숨을 쉬고, 천천히 눈을 떠 보세요."
+      ]
+    },
+    {
+      id: "fatigue", emoji: "🥱", label: "피곤해요",
+      description: "뇌에 안개가 낀 것처럼 멍해요",
+      fallback: [
+        "눈을 감고, 어깨의 무게를 의자에 완전히 내려놓아 보세요.",
+        "오늘 하루 화면을 얼마나 많이 봤는지 떠올려 보세요. 지금은 눈이 쉴 시간입니다.",
+        "천천히 코로 숨을 들이마십니다. 신선한 공기가 머릿속 안개를 걷어낸다고 상상해 보세요.",
+        "숨을 잠시 멈췄다가, 입으로 길게 내쉬며 피로를 함께 흘려보냅니다.",
+        "목과 미간의 힘을 풀어 보세요. 아주 작은 긴장까지 내려놓습니다.",
+        "다시 한 번, 깊게 들이마시고 느리게 내쉽니다.",
+        "머릿속이 조금씩 맑아지는 걸 상상해 보세요. 안개가 걷히듯이.",
+        "지금 이 3분은 온전히 당신을 위한 시간입니다.",
+        "천천히 눈을 뜨고, 가벼워진 머리로 다시 시작해 볼까요."
+      ]
+    },
+    {
+      id: "focus", emoji: "📉", label: "집중이 안 돼요",
+      description: "탭을 너무 많이 켜놔서 산만해요",
+      fallback: [
+        "잠시 머릿속에 열려 있는 탭들을 떠올려 보세요. 지금은 다 닫아도 괜찮습니다.",
+        "오직 하나, 당신의 숨에만 집중해 볼게요.",
+        "코로 천천히 숨을 들이마시며 넷을 세어 봅니다.",
+        "잠시 멈추고, 입으로 천천히 숨을 내쉬며 여섯을 세어 봅니다.",
+        "생각이 다른 곳으로 흘러가도 괜찮아요. 다시 숨으로 돌아오면 됩니다.",
+        "한 번 더, 들이마시고... 내쉬고.",
+        "머릿속이 하나의 창만 남은 것처럼 단순해지는 걸 느껴보세요.",
+        "지금 이 순간에만 집중하는 연습, 잘 하고 계세요.",
+        "천천히 눈을 뜨고, 가장 중요한 탭 하나만 남겨보세요."
+      ]
+    },
+    {
+      id: "rest", emoji: "🌙", label: "그냥 쉬고 싶어요",
+      description: "특별한 이유 없이 잠시 멈추고 싶어요",
+      fallback: [
+        "지금 이 순간, 아무것도 하지 않아도 괜찮습니다.",
+        "눈을 감고, 의자에 몸을 편안히 기대어 보세요.",
+        "코로 천천히 숨을 들이마셔 봅니다.",
+        "그리고 편안하게, 입으로 천천히 내쉬어 봅니다.",
+        "오늘 애쓴 나에게 잠깐의 쉼을 선물해 주세요.",
+        "다시 한 번, 편안하게 들이마시고 내쉽니다.",
+        "몸의 힘이 서서히 풀리는 걸 느껴보세요.",
+        "이 3분은 그냥 존재하기 위한 시간입니다.",
+        "충분히 쉬었다면, 천천히 눈을 떠 보세요."
+      ]
+    }
+  ];
+
+  function getMood(id) {
+    for (var i = 0; i < MOODS.length; i++) if (MOODS[i].id === id) return MOODS[i];
+    return MOODS[3];
+  }
+
+  // ---- sessionStore (localStorage) ----
+  var STORAGE_KEY = "reset3_sessions_v1";
+  var SESSION_MINUTES = 3;
+
+  function readAll() {
+    try {
+      var raw = window.localStorage.getItem(STORAGE_KEY);
+      if (!raw) return [];
+      var parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) { return []; }
+  }
+  function writeAll(records) { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(records)); }
+  function toDateKey(d) { return d.toISOString().slice(0, 10); }
+  function addSession(moodId) {
+    var now = new Date();
+    var record = { date: toDateKey(now), moodId: moodId, timestamp: now.getTime() };
+    var all = readAll();
+    all.push(record);
+    writeAll(all);
+    return record;
+  }
+  function getSessions() { return readAll().sort(function (a, b) { return b.timestamp - a.timestamp; }); }
+  function getTotalCount() { return readAll().length; }
+  function getTodayMinutes() {
+    var key = toDateKey(new Date());
+    var count = readAll().filter(function (r) { return r.date === key; }).length;
+    return count * SESSION_MINUTES;
+  }
+  function getStreak() {
+    var days = {};
+    readAll().forEach(function (r) { days[r.date] = true; });
+    var streak = 0;
+    var cursor = new Date();
+    for (;;) {
+      var key = toDateKey(cursor);
+      if (!days[key]) break;
+      streak += 1;
+      cursor.setDate(cursor.getDate() - 1);
+    }
+    return streak;
+  }
+
+  // ---- ambient sound (Web Audio API) ----
+  var actx = null, masterGain = null, audioNodes = [], breathLfo = null;
+
+  function createNoiseBuffer(context) {
+    var bufferSize = context.sampleRate * 2;
+    var buffer = context.createBuffer(1, bufferSize, context.sampleRate);
+    var data = buffer.getChannelData(0);
+    var lastOut = 0;
+    for (var i = 0; i < bufferSize; i++) {
+      var white = Math.random() * 2 - 1;
+      lastOut = (lastOut + 0.02 * white) / 1.02;
+      data[i] = lastOut * 3.5;
+    }
+    return buffer;
+  }
+
+  function startAmbientSound() {
+    if (actx) return;
+    var AudioContextCtor = window.AudioContext || window.webkitAudioContext;
+    actx = new AudioContextCtor();
+
+    masterGain = actx.createGain();
+    masterGain.gain.value = 0;
+    masterGain.connect(actx.destination);
+    masterGain.gain.linearRampToValueAtTime(0.12, actx.currentTime + 2);
+
+    var filter = actx.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.value = 800;
+    filter.connect(masterGain);
+
+    var freqs = [196, 246.94, 293.66];
+    audioNodes = freqs.map(function (freq) {
+      var osc = actx.createOscillator();
+      osc.type = "sine";
+      osc.frequency.value = freq;
+      var gain = actx.createGain();
+      gain.gain.value = 0.33;
+      osc.connect(gain);
+      gain.connect(filter);
+      osc.start();
+      return osc;
+    });
+
+    breathLfo = actx.createOscillator();
+    breathLfo.type = "sine";
+    breathLfo.frequency.value = 1 / 10;
+    var lfoGain = actx.createGain();
+    lfoGain.gain.value = 250;
+    breathLfo.connect(lfoGain);
+    lfoGain.connect(filter.frequency);
+    breathLfo.start();
+
+    var noise = actx.createBufferSource();
+    noise.buffer = createNoiseBuffer(actx);
+    noise.loop = true;
+    var noiseFilter = actx.createBiquadFilter();
+    noiseFilter.type = "bandpass";
+    noiseFilter.frequency.value = 600;
+    var noiseGain = actx.createGain();
+    noiseGain.gain.value = 0.05;
+    noise.connect(noiseFilter);
+    noiseFilter.connect(noiseGain);
+    noiseGain.connect(masterGain);
+    noise.start();
+    audioNodes.push(noise);
+  }
+
+  function stopAmbientSound() {
+    if (!actx || !masterGain) return;
+    var context = actx, gain = masterGain, nodesToStop = audioNodes, lfo = breathLfo;
+    gain.gain.linearRampToValueAtTime(0, context.currentTime + 0.8);
+    setTimeout(function () {
+      nodesToStop.forEach(function (n) { try { n.stop(); } catch (e) {} });
+      if (lfo) try { lfo.stop(); } catch (e) {}
+      context.close();
+    }, 900);
+    actx = null; masterGain = null; audioNodes = []; breathLfo = null;
+  }
+
+  function suspendAmbientSound() { if (actx && actx.state === "running") actx.suspend(); }
+  function resumeAmbientSound() { if (actx && actx.state === "suspended") actx.resume(); }
+
+  // ---- app state ----
+  var app = document.getElementById("app");
+  var state = { stage: "start", moodId: null, paragraphs: [], elapsed: 0, paused: false, streak: 0, totalCount: 0 };
+  var tickInterval = null;
+  var soundEnabled = true;
+
+  function formatTime(seconds) {
+    var m = Math.floor(seconds / 60);
+    var s = Math.floor(seconds % 60);
+    return m + ":" + (s < 10 ? "0" + s : s);
+  }
+
+  function computeGuideText(paragraphs, elapsedSeconds, totalSeconds) {
+    if (!paragraphs.length) return "";
+    var slice = totalSeconds / paragraphs.length;
+    var currentIndex = Math.min(paragraphs.length - 1, Math.floor(elapsedSeconds / slice));
+    var current = paragraphs[currentIndex];
+    var sliceStart = currentIndex * slice;
+    var fraction = Math.min(1, Math.max(0, (elapsedSeconds - sliceStart) / slice));
+    var revealFraction = Math.min(1, fraction / 0.7);
+    var charCount = Math.round(current.length * revealFraction);
+    return current.slice(0, charCount);
+  }
+
+  function stopTicking() { if (tickInterval) { clearInterval(tickInterval); tickInterval = null; } }
+
+  function startTicking() {
+    stopTicking();
+    tickInterval = setInterval(function () {
+      if (state.paused) return;
+      state.elapsed = Math.min(SESSION_SECONDS, state.elapsed + 0.1);
+      updateSessionUI();
+      if (state.elapsed >= SESSION_SECONDS) {
+        stopTicking();
+        stopAmbientSound();
+        addSession(state.moodId);
+        state.streak = getStreak();
+        state.totalCount = getTotalCount();
+        state.stage = "complete";
+        render();
+      }
+    }, 100);
+  }
+
+  function updateSessionUI() {
+    var remaining = SESSION_SECONDS - state.elapsed;
+    var progress = Math.min(1, Math.max(0, 1 - remaining / SESSION_SECONDS));
+    var timerText = document.getElementById("timerText");
+    var timerBar = document.getElementById("timerBar");
+    var guideText = document.getElementById("guideText");
+    if (timerText) timerText.textContent = formatTime(remaining);
+    if (timerBar) timerBar.style.width = (progress * 100) + "%";
+    if (guideText) guideText.textContent = computeGuideText(state.paragraphs, state.elapsed, SESSION_SECONDS);
+    var shouldBeActive = !state.paused && state.elapsed < SESSION_SECONDS;
+    var animEls = document.querySelectorAll(".flow-anim-el");
+    for (var i = 0; i < animEls.length; i++) animEls[i].classList.toggle("paused", !shouldBeActive);
+  }
+
+  function handleStart(moodId) {
+    state.moodId = moodId;
+    state.stage = "loading";
+    render();
+    setTimeout(function () {
+      var mood = getMood(moodId);
+      state.paragraphs = mood.fallback;
+      state.paused = false;
+      state.elapsed = 0;
+      state.stage = "session";
+      render();
+    }, 500);
+  }
+
+  function handleReturnToStart() {
+    stopTicking();
+    stopAmbientSound();
+    state.stage = "start";
+    state.moodId = null;
+    state.paragraphs = [];
+    state.elapsed = 0;
+    state.paused = false;
+    render();
+  }
+
+  function goToHistory() { state.stage = "history"; render(); }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  function renderStart() {
+    var todayMinutes = getTodayMinutes();
+    var cardsHtml = MOODS.map(function (m) {
+      return (
+        '<button type="button" class="mood-card" data-mood="' + m.id + '">' +
+          '<span class="mood-emoji">' + m.emoji + "</span>" +
+          '<span class="mood-label">' + escapeHtml(m.label) + "</span>" +
+          '<span class="mood-desc">' + escapeHtml(m.description) + "</span>" +
+        "</button>"
+      );
+    }).join("");
+
+    app.innerHTML =
+      '<div class="screen-start">' +
+        '<h1 class="title">' +
+          '<span class="title-sub">AI와 함께하는</span>' +
+          '<span class="title-main">3분 리셋 명상</span>' +
+        "</h1>" +
+        '<p class="muted">지금 느낌을 골라주시면<br>딱 맞는 3분 명상을 준비해 드려요.</p>' +
+        '<div class="mood-grid">' + cardsHtml + "</div>" +
+        '<p class="today-stat">오늘 누적 명상 시간 <span class="today-stat-num">' + todayMinutes + "분</span></p>" +
+        '<button type="button" id="linkHistoryFromStart" class="link-muted">나의 기록 보기</button>' +
+      "</div>";
+
+    var cards = app.querySelectorAll(".mood-card");
+    for (var i = 0; i < cards.length; i++) {
+      cards[i].addEventListener("click", (function (id) { return function () { handleStart(id); }; })(cards[i].getAttribute("data-mood")));
+    }
+    document.getElementById("linkHistoryFromStart").onclick = goToHistory;
+  }
+
+  function renderLoading() {
+    app.innerHTML =
+      '<div class="screen-loading">' +
+        '<div class="spinner"></div>' +
+        '<p class="muted">지금 딱 맞는 명상을 준비하고 있어요...</p>' +
+      "</div>";
+  }
+
+  function renderSession() {
+    soundEnabled = true;
+    app.innerHTML =
+      '<div class="screen-session">' +
+        '<button type="button" id="soundToggleBtn" class="sound-toggle">' +
+          '<span id="soundIcon">🔊</span><span id="soundLabel">소리 켜짐</span>' +
+        "</button>" +
+        '<div class="flow-wrap">' +
+          '<div class="flow-labels">' +
+            '<span class="label label-in flow-anim-el">들이마시고</span>' +
+            '<span class="label label-hold flow-anim-el">멈추고</span>' +
+            '<span class="label label-out flow-anim-el">내쉬고</span>' +
+          "</div>" +
+          '<div class="flow-track">' +
+            '<svg class="flow-svg flow-anim-el" viewBox="0 0 900 140" preserveAspectRatio="none">' +
+              '<path d="M0,140 L0,130 L120,10 L180,10 L300,130 L420,10 L480,10 L600,130 L720,10 L780,10 L900,130 L900,140 Z" fill="#d6336c" opacity="0.12"></path>' +
+              '<polyline points="0,130 120,10 180,10 300,130 420,10 480,10 600,130 720,10 780,10 900,130" fill="none" stroke="#d6336c" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"></polyline>' +
+            "</svg>" +
+            '<div class="flow-dot flow-anim-el"></div>' +
+          "</div>" +
+        "</div>" +
+        '<p id="guideText" class="guide-text"></p>' +
+        '<div class="timer-wrap">' +
+          '<span id="timerText" class="timer-text">3:00</span>' +
+          '<div class="timer-track"><div id="timerBar" class="timer-bar"></div></div>' +
+        "</div>" +
+        '<div class="controls">' +
+          '<button type="button" id="btnRestart" class="ctrl-btn" title="처음부터 다시">🔁</button>' +
+          '<button type="button" id="btnPause" class="ctrl-btn ctrl-btn-main" title="일시정지">⏸</button>' +
+          '<button type="button" id="btnHome" class="ctrl-btn" title="메인으로 돌아가기">🏠</button>' +
+        "</div>" +
+      "</div>";
+
+    document.getElementById("soundToggleBtn").addEventListener("click", function () {
+      soundEnabled = !soundEnabled;
+      if (soundEnabled) startAmbientSound(); else stopAmbientSound();
+      document.getElementById("soundIcon").textContent = soundEnabled ? "🔊" : "🔇";
+      document.getElementById("soundLabel").textContent = soundEnabled ? "소리 켜짐" : "소리 꺼짐";
+    });
+    startAmbientSound();
+
+    document.getElementById("btnRestart").addEventListener("click", function () {
+      state.elapsed = 0;
+      state.paused = false;
+      var b = document.getElementById("btnPause");
+      b.textContent = "⏸"; b.title = "일시정지";
+      resumeAmbientSound();
+      updateSessionUI();
+    });
+
+    document.getElementById("btnPause").addEventListener("click", function () {
+      state.paused = !state.paused;
+      if (state.paused) suspendAmbientSound(); else resumeAmbientSound();
+      var b = document.getElementById("btnPause");
+      b.textContent = state.paused ? "▶" : "⏸";
+      b.title = state.paused ? "재생" : "일시정지";
+      updateSessionUI();
+    });
+
+    document.getElementById("btnHome").addEventListener("click", handleReturnToStart);
+
+    updateSessionUI();
+    startTicking();
+  }
+
+  function renderComplete() {
+    app.innerHTML =
+      '<div class="screen-complete">' +
+        '<span class="big-emoji">🌸</span>' +
+        "<h2>오늘의 리셋 완료</h2>" +
+        '<p class="muted">잠깐의 멈춤이 다음 몇 시간을 더 가볍게 만들어 줄 거예요.</p>' +
+        '<div class="stat-card">' +
+          '<div class="stat"><span class="stat-num">' + state.streak + '</span><span class="stat-label">연속 일수</span></div>' +
+          '<div class="stat-divider"></div>' +
+          '<div class="stat"><span class="stat-num">' + state.totalCount + '</span><span class="stat-label">누적 리셋</span></div>' +
+        "</div>" +
+        '<button type="button" id="btnRestartFlow" class="btn-primary">다시 시작하기</button>' +
+        '<button type="button" id="linkHistoryFromComplete" class="link-muted">나의 기록 보기</button>' +
+      "</div>";
+    document.getElementById("btnRestartFlow").onclick = handleReturnToStart;
+    document.getElementById("linkHistoryFromComplete").onclick = goToHistory;
+  }
+
+  function renderHistory() {
+    var sessions = getSessions();
+    var streak = getStreak();
+    var total = getTotalCount();
+    var listHtml;
+    if (sessions.length === 0) {
+      listHtml = '<p class="muted">아직 기록이 없어요. 첫 3분을 시작해 보세요.</p>';
+    } else {
+      listHtml = '<ul class="history-list">' + sessions.map(function (s) {
+        var mood = getMood(s.moodId);
+        return (
+          '<li class="history-item">' +
+            '<span class="history-emoji">' + mood.emoji + "</span>" +
+            '<div class="history-info">' +
+              '<span class="history-mood">' + escapeHtml(mood.label) + "</span>" +
+              '<span class="history-date">' + s.date + "</span>" +
+            "</div>" +
+          "</li>"
+        );
+      }).join("") + "</ul>";
+    }
+
+    app.innerHTML =
+      '<div class="screen-history">' +
+        '<h1 class="history-title">나의 리셋 기록</h1>' +
+        '<div class="stat-card">' +
+          '<div class="stat"><span class="stat-num">' + streak + '</span><span class="stat-label">연속 일수</span></div>' +
+          '<div class="stat-divider"></div>' +
+          '<div class="stat"><span class="stat-num">' + total + '</span><span class="stat-label">누적 리셋</span></div>' +
+        "</div>" +
+        listHtml +
+        '<button type="button" id="linkHomeFromHistory" class="btn-primary">3분 리셋하러 가기</button>' +
+      "</div>";
+    document.getElementById("linkHomeFromHistory").onclick = function () {
+      state.stage = "start";
+      render();
+    };
+  }
+
+  function render() {
+    if (state.stage !== "session") stopTicking();
+    if (state.stage === "start") renderStart();
+    else if (state.stage === "loading") renderLoading();
+    else if (state.stage === "session") renderSession();
+    else if (state.stage === "complete") renderComplete();
+    else if (state.stage === "history") renderHistory();
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>
