@@ -17,7 +17,7 @@ import {
   getSessionsServerSnapshot,
   subscribeSessions,
 } from "@/lib/sessionStore";
-import { suspendAmbientSound, resumeAmbientSound } from "@/lib/ambientSound";
+import { startAmbientSound, suspendAmbientSound, resumeAmbientSound } from "@/lib/ambientSound";
 
 const SESSION_SECONDS = 180;
 
@@ -56,6 +56,11 @@ export default function Home() {
   }, [stage, paused, moodId]);
 
   function handleStart(id: MoodId) {
+    // must start synchronously inside this click handler - browsers only allow
+    // audio to start within a direct user-gesture call stack, and this would
+    // otherwise fire later from SoundToggle's mount effect (after the loading
+    // setTimeout), which is too late and gets silently blocked
+    startAmbientSound();
     setMoodId(id);
     setStage("loading");
     setTimeout(() => {

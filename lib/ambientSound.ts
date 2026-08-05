@@ -21,6 +21,11 @@ export function startAmbientSound() {
   if (ctx) return; // already running
   const AudioContextCtor = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
   ctx = new AudioContextCtor();
+  if (ctx.state === "suspended") {
+    // belt-and-suspenders: some browsers still hand back a suspended context
+    // even when created inside a user gesture
+    void ctx.resume();
+  }
 
   masterGain = ctx.createGain();
   masterGain.gain.value = 0;

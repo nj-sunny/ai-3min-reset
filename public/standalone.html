@@ -318,6 +318,11 @@
     if (actx) return;
     var AudioContextCtor = window.AudioContext || window.webkitAudioContext;
     actx = new AudioContextCtor();
+    if (actx.state === "suspended") {
+      // belt-and-suspenders: some browsers still hand back a suspended
+      // context even when created inside a user gesture
+      actx.resume();
+    }
 
     masterGain = actx.createGain();
     masterGain.gain.value = 0;
@@ -487,6 +492,11 @@
   }
 
   function handleStart(moodId) {
+    // must start synchronously inside this click handler - browsers only
+    // allow audio to start within a direct user-gesture call stack, and this
+    // would otherwise fire later from renderSession (after the loading
+    // setTimeout), which is too late and gets silently blocked
+    startAmbientSound();
     state.moodId = moodId;
     state.stage = "loading";
     render();
