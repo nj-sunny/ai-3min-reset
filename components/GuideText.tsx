@@ -1,29 +1,30 @@
 interface GuideTextProps {
   paragraphs: string[];
   elapsedSeconds: number;
-  totalSeconds: number;
 }
 
-export default function GuideText({ paragraphs, elapsedSeconds, totalSeconds }: GuideTextProps) {
+const FADE_IN_SECONDS = 3.5;
+const HOLD_SECONDS = 6;
+const CYCLE_SECONDS = FADE_IN_SECONDS + HOLD_SECONDS;
+
+export default function GuideText({ paragraphs, elapsedSeconds }: GuideTextProps) {
   if (paragraphs.length === 0) return null;
 
-  const slice = totalSeconds / paragraphs.length;
-  const currentIndex = Math.min(paragraphs.length - 1, Math.floor(elapsedSeconds / slice));
+  const rawIndex = Math.floor(elapsedSeconds / CYCLE_SECONDS);
+  const currentIndex = Math.min(paragraphs.length - 1, rawIndex);
   const current = paragraphs[currentIndex];
 
-  const sliceStart = currentIndex * slice;
-  const fraction = Math.min(1, Math.max(0, (elapsedSeconds - sliceStart) / slice));
-  // reveal the full paragraph a bit before the slice ends so it's readable, not just barely finished
-  const revealFraction = Math.min(1, fraction / 0.7);
-  const charCount = Math.round(current.length * revealFraction);
-  const visibleText = current.slice(0, charCount);
+  // once the last paragraph's own cycle has passed, just hold it fully visible
+  const localElapsed = rawIndex > currentIndex ? CYCLE_SECONDS : elapsedSeconds - currentIndex * CYCLE_SECONDS;
+  const opacity = Math.min(1, localElapsed / FADE_IN_SECONDS);
 
   return (
     <p
       key={currentIndex}
-      className="min-h-[4.5rem] max-w-sm text-center text-lg leading-relaxed text-[#6b4a52]"
+      className="min-h-[4.5rem] max-w-sm text-center text-lg leading-relaxed text-[#6b4a52] transition-opacity duration-100"
+      style={{ opacity }}
     >
-      {visibleText}
+      {current}
     </p>
   );
 }

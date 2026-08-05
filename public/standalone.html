@@ -105,7 +105,8 @@
     100% { top: 7.14%; }
   }
 
-  .guide-text { min-height:72px; max-width:340px; text-align:center; font-size:18px; line-height:1.6; color:var(--ink); margin:0; }
+  .guide-text { min-height:72px; max-width:340px; text-align:center; font-size:18px; line-height:1.6; color:var(--ink); margin:0; transition:opacity .1s linear; }
+  .flow-caption { width:100%; margin:8px 0 0; text-align:right; font-size:12px; color:var(--ink-soft); }
 
   .timer-wrap { display:flex; flex-direction:column; align-items:center; gap:8px; width:100%; max-width:280px; }
   .timer-text { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size:24px; color:var(--ink); font-variant-numeric: tabular-nums; }
@@ -170,7 +171,7 @@
     {
       id: "stress", emoji: "😵‍💫", label: "스트레스 받았어요",
       description: "머리가 지끈거리고 마음이 조급해요",
-      color: "#ff4d8f",
+      color: "#ff4d8f", pastel: "#ffe3ee",
       fallback: [
         "잠시 키보드에서 손을 떼고, 화면에서 눈을 떼어 보세요.",
         "지금 어깨가 얼마나 올라가 있는지 느껴보세요. 그리고 스르르 내려놓아 봅니다.",
@@ -186,7 +187,7 @@
     {
       id: "fatigue", emoji: "🥱", label: "피곤해요",
       description: "뇌에 안개가 낀 것처럼 멍해요",
-      color: "#ffa94d",
+      color: "#ffa94d", pastel: "#ffedd9",
       fallback: [
         "눈을 감고, 어깨의 무게를 의자에 완전히 내려놓아 보세요.",
         "오늘 하루 화면을 얼마나 많이 봤는지 떠올려 보세요. 지금은 눈이 쉴 시간입니다.",
@@ -202,7 +203,7 @@
     {
       id: "focus", emoji: "📉", label: "집중이 안 돼요",
       description: "탭을 너무 많이 켜놔서 산만해요",
-      color: "#38bdf8",
+      color: "#38bdf8", pastel: "#dcf1fe",
       fallback: [
         "잠시 머릿속에 열려 있는 탭들을 떠올려 보세요. 지금은 다 닫아도 괜찮습니다.",
         "오직 하나, 당신의 숨에만 집중해 볼게요.",
@@ -218,7 +219,7 @@
     {
       id: "rest", emoji: "🌙", label: "그냥 쉬고 싶어요",
       description: "특별한 이유 없이 잠시 멈추고 싶어요",
-      color: "#51cf66",
+      color: "#51cf66", pastel: "#e2f8e6",
       fallback: [
         "지금 이 순간, 아무것도 하지 않아도 괜찮습니다.",
         "눈을 감고, 의자에 몸을 편안히 기대어 보세요.",
@@ -376,16 +377,19 @@
     return m + ":" + (s < 10 ? "0" + s : s);
   }
 
-  function computeGuideText(paragraphs, elapsedSeconds, totalSeconds) {
-    if (!paragraphs.length) return "";
-    var slice = totalSeconds / paragraphs.length;
-    var currentIndex = Math.min(paragraphs.length - 1, Math.floor(elapsedSeconds / slice));
-    var current = paragraphs[currentIndex];
-    var sliceStart = currentIndex * slice;
-    var fraction = Math.min(1, Math.max(0, (elapsedSeconds - sliceStart) / slice));
-    var revealFraction = Math.min(1, fraction / 0.7);
-    var charCount = Math.round(current.length * revealFraction);
-    return current.slice(0, charCount);
+  var GUIDE_FADE_IN_SECONDS = 3.5;
+  var GUIDE_HOLD_SECONDS = 6;
+  var GUIDE_CYCLE_SECONDS = GUIDE_FADE_IN_SECONDS + GUIDE_HOLD_SECONDS;
+
+  function computeGuideDisplay(paragraphs, elapsedSeconds) {
+    if (!paragraphs.length) return { text: "", opacity: 0 };
+    var rawIndex = Math.floor(elapsedSeconds / GUIDE_CYCLE_SECONDS);
+    var currentIndex = Math.min(paragraphs.length - 1, rawIndex);
+    var text = paragraphs[currentIndex];
+    // once the last paragraph's own cycle has passed, just hold it fully visible
+    var localElapsed = rawIndex > currentIndex ? GUIDE_CYCLE_SECONDS : elapsedSeconds - currentIndex * GUIDE_CYCLE_SECONDS;
+    var opacity = Math.min(1, localElapsed / GUIDE_FADE_IN_SECONDS);
+    return { text: text, opacity: opacity };
   }
 
   function stopTicking() { if (tickInterval) { clearInterval(tickInterval); tickInterval = null; } }
@@ -416,7 +420,11 @@
     var guideText = document.getElementById("guideText");
     if (timerText) timerText.textContent = formatTime(remaining);
     if (timerBar) timerBar.style.width = (progress * 100) + "%";
-    if (guideText) guideText.textContent = computeGuideText(state.paragraphs, state.elapsed, SESSION_SECONDS);
+    if (guideText) {
+      var guideDisplay = computeGuideDisplay(state.paragraphs, state.elapsed);
+      guideText.textContent = guideDisplay.text;
+      guideText.style.opacity = guideDisplay.opacity;
+    }
     var shouldBeActive = !state.paused && state.elapsed < SESSION_SECONDS;
     var animEls = document.querySelectorAll(".flow-anim-el");
     for (var i = 0; i < animEls.length; i++) animEls[i].classList.toggle("paused", !shouldBeActive);
@@ -439,6 +447,7 @@
   function handleReturnToStart() {
     stopTicking();
     stopAmbientSound();
+    document.body.style.background = "";
     state.stage = "start";
     state.moodId = null;
     state.paragraphs = [];
@@ -496,7 +505,9 @@
 
   function renderSession() {
     soundEnabled = true;
-    var moodColor = getMood(state.moodId).color;
+    var mood = getMood(state.moodId);
+    var moodColor = mood.color;
+    document.body.style.background = "linear-gradient(to bottom, #fff9f5, " + mood.pastel + ")";
     app.innerHTML =
       '<div class="screen-session">' +
         '<button type="button" id="soundToggleBtn" class="sound-toggle">' +
@@ -519,6 +530,7 @@
               '<span class="label-pill label-out flow-anim-el">내쉬고</span>' +
             "</div>" +
           "</div>" +
+          '<p class="flow-caption">원의 움직임따라 호흡하세요</p>' +
         "</div>" +
         '<p id="guideText" class="guide-text"></p>' +
         '<div class="timer-wrap">' +

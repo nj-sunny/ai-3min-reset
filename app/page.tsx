@@ -99,8 +99,17 @@ export default function Home() {
     setPaused(false);
   }
 
+  const sessionMood = stage === "session" ? getMood(moodId) : null;
+
   return (
-    <main className="flex min-h-screen flex-1 flex-col items-center bg-gradient-to-b from-cream-100 via-blossom-50 to-lavender-100 px-6 py-10">
+    <main
+      className="flex min-h-screen flex-1 flex-col items-center bg-gradient-to-b from-cream-100 via-blossom-50 to-lavender-100 px-6 py-10"
+      style={
+        sessionMood
+          ? { background: `linear-gradient(to bottom, #fff9f5, ${sessionMood.pastel})` }
+          : undefined
+      }
+    >
       {stage === "start" && (
         <div className="mt-6 flex w-full max-w-md flex-col items-center gap-6 text-center">
           <h1 className="flex flex-col items-center gap-1">
@@ -137,7 +146,7 @@ export default function Home() {
         <div className="flex w-full max-w-md flex-col items-center gap-8">
           <SoundToggle />
           <BreathingFlow active={!paused && elapsed < SESSION_SECONDS} color={getMood(moodId).color} />
-          <GuideText paragraphs={paragraphs} elapsedSeconds={elapsed} totalSeconds={SESSION_SECONDS} />
+          <GuideText paragraphs={paragraphs} elapsedSeconds={elapsed} />
           <SessionTimer remainingSeconds={SESSION_SECONDS - elapsed} totalSeconds={SESSION_SECONDS} />
           <SessionControls
             paused={paused}

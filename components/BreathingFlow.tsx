@@ -28,69 +28,72 @@ export default function BreathingFlow({ active, color }: BreathingFlowProps) {
   const wrapStyle = { "--breath-color": color } as CSSProperties;
 
   return (
-    <div
-      className="relative w-full overflow-hidden rounded-3xl shadow-lg"
-      style={{
-        ...wrapStyle,
-        height: "clamp(140px, 34vw, 200px)",
-        background:
-          "radial-gradient(120% 100% at 30% 0%, rgba(120,130,255,0.12), transparent 60%), #0a0e17",
-      }}
-    >
-      {/* base track: always visible, muted */}
-      <svg
-        className={`absolute inset-0 h-full w-[300%] animate-flow-scroll ${anim}`}
-        viewBox="0 0 900 140"
-        preserveAspectRatio="none"
+    <div className="w-full">
+      <div
+        className="relative w-full overflow-hidden rounded-3xl shadow-lg"
+        style={{
+          ...wrapStyle,
+          height: "clamp(140px, 34vw, 200px)",
+          background:
+            "radial-gradient(120% 100% at 30% 0%, rgba(120,130,255,0.12), transparent 60%), #0a0e17",
+        }}
       >
-        <path
-          d={LINE_D}
-          fill="none"
-          stroke="#4b5563"
-          strokeWidth={5}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          vectorEffect="non-scaling-stroke"
-        />
-      </svg>
-
-      {/* glowing mood-colored track, clipped to the already-breathed portion left of the dot */}
-      <div className="absolute inset-0" style={{ clipPath: "inset(0 60% 0 0)" }}>
+        {/* base track: always visible, muted */}
         <svg
           className={`absolute inset-0 h-full w-[300%] animate-flow-scroll ${anim}`}
           viewBox="0 0 900 140"
           preserveAspectRatio="none"
-          style={{
-            filter:
-              "drop-shadow(0 0 4px var(--breath-color)) drop-shadow(0 0 14px var(--breath-color))",
-          }}
         >
           <path
             d={LINE_D}
             fill="none"
-            stroke="var(--breath-color)"
-            strokeWidth={6}
+            stroke="#4b5563"
+            strokeWidth={5}
             strokeLinecap="round"
             strokeLinejoin="round"
             vectorEffect="non-scaling-stroke"
           />
         </svg>
-      </div>
 
-      <div
-        className={`absolute h-8 w-8 -translate-x-1/2 -translate-y-1/2 rounded-full animate-flow-dot-bounce ${anim}`}
-        style={{
-          left: "40%",
-          backgroundColor: "var(--breath-color)",
-          boxShadow: "0 0 10px var(--breath-color), 0 0 28px var(--breath-color)",
-        }}
-      />
+        {/* glowing mood-colored track, clipped to the already-breathed portion left of the dot */}
+        <div className="absolute inset-0" style={{ clipPath: "inset(0 60% 0 0)" }}>
+          <svg
+            className={`absolute inset-0 h-full w-[300%] animate-flow-scroll ${anim}`}
+            viewBox="0 0 900 140"
+            preserveAspectRatio="none"
+            style={{
+              filter:
+                "drop-shadow(0 0 4px var(--breath-color)) drop-shadow(0 0 14px var(--breath-color))",
+            }}
+          >
+            <path
+              d={LINE_D}
+              fill="none"
+              stroke="var(--breath-color)"
+              strokeWidth={6}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              vectorEffect="non-scaling-stroke"
+            />
+          </svg>
+        </div>
 
-      <div className="absolute left-4 top-4 flex h-8 items-center">
-        <span className={`label-pill absolute animate-breathe-in-label ${anim}`}>들이마시고</span>
-        <span className={`label-pill absolute animate-breathe-hold-label ${anim}`}>멈추고</span>
-        <span className={`label-pill absolute animate-breathe-out-label ${anim}`}>내쉬고</span>
+        <div
+          className={`absolute h-8 w-8 -translate-x-1/2 -translate-y-1/2 rounded-full animate-flow-dot-bounce ${anim}`}
+          style={{
+            left: "40%",
+            backgroundColor: "var(--breath-color)",
+            boxShadow: "0 0 10px var(--breath-color), 0 0 28px var(--breath-color)",
+          }}
+        />
+
+        <div className="absolute left-4 top-4 flex h-8 items-center">
+          <span className={`label-pill absolute animate-breathe-in-label ${anim}`}>들이마시고</span>
+          <span className={`label-pill absolute animate-breathe-hold-label ${anim}`}>멈추고</span>
+          <span className={`label-pill absolute animate-breathe-out-label ${anim}`}>내쉬고</span>
+        </div>
       </div>
+      <p className="mt-2 text-right text-xs text-[#9a7d84]">원의 움직임따라 호흡하세요</p>
     </div>
   );
 }
