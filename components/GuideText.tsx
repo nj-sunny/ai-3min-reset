@@ -4,7 +4,7 @@ interface GuideTextProps {
 }
 
 const WORD_FADE_SECONDS = 1.5;
-const WORD_GAP_SECONDS = 2.5;
+const WORD_GAP_SECONDS = 2;
 const HOLD_SECONDS = 6;
 
 function splitWords(paragraph: string): string[] {
