@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "3분 리셋 | AI 명상",
+  title: "3분명상",
   description: "일하다 지쳤을 때, 탭을 닫지 않아도 되는 3분 AI 명상",
 };
 
